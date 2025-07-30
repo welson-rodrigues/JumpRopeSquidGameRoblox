@@ -1,10 +1,11 @@
 local cordaModel = script.Parent
+
 local haste = cordaModel:FindFirstChild("Haste")
 
 if haste then
 	cordaModel.PrimaryPart = haste
 else
-	warn("Parte 'Haste' não encontrada no modelo!")
+	warn("A parte 'Haste' não foi encontrada no modelo!")
 	return
 end
 
