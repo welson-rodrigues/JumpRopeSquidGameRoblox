@@ -1,16 +1,14 @@
 local cordaModel = script.Parent
-
 local haste = cordaModel:FindFirstChild("Haste")
 
 if haste then
 	cordaModel.PrimaryPart = haste
 else
-	warn("A parte 'Haste' não foi encontrada no modelo!")
+	warn("Parte 'Haste' não encontrada no modelo!")
 	return
 end
 
-local velocidade = 2 
-
+local velocidade = 2 -- graus por frame
 
 while true do
 	task.wait()
