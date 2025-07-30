@@ -1,5 +1,4 @@
 local cordaModel = script.Parent
-
 local eixo = cordaModel:FindFirstChild("Eixo")
 
 if not eixo then
@@ -13,7 +12,7 @@ local velocidade = 2
 
 while true do
 	task.wait()
-	local rotacao = CFrame.Angles(0, math.rad(velocidade), 0)
+	local rotacao = CFrame.Angles(0, 0, math.rad(velocidade))
 	local atual = cordaModel:GetPivot()
 	cordaModel:PivotTo(atual * rotacao)
 end
