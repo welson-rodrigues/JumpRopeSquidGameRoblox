@@ -1,80 +1,82 @@
--- Modelo da corda que contém este script
 local cordaModel = script.Parent
-
--- A parte que servirá como centro da rotação
 local eixo = cordaModel:FindFirstChild("Eixo")
-
--- A(s) parte(s) da corda que vão detectar a colisão com o jogador
-
 local parteDeColisao = cordaModel:FindFirstChild("Haste") 
+local Debris = game:GetService("Debris")
 
--- Configurações do Jogo
-local velocidadeDeRotacao = 3 
-local forcaDoEmpurrao = 2000  
-local alturaDoEmpurrao = 500  
-local tempoDeCooldown = 1     
+-- Ajuste estes valores para calibrar o jogo --
+local velocidadeDeRotacao = 3    .
+local forcaDoEmpurrao = 30000    
+local alturaDoEmpurrao = 10000   
+local duracaoDoEmpurrao = 0.2    
+local tempoDeCooldown = 1        .
 
--- Tabela para controlar quais jogadores estão em cooldown
+--// --- INICIALIZAÇÃO E CHECAGENS ---
 local playersEmCooldown = {}
 
--- Checa se as partes essenciais existem
 if not eixo or not parteDeColisao then
-    warn("AVISO: Uma das partes necessárias ('Eixo' ou a 'parteDeColisao') não foi encontrada no modelo!")
+    warn("AVISO: Uma das partes necessárias ('Eixo' ou 'Haste') não foi encontrada!")
     return
 end
 
 -- Define o Eixo como a parte primária para a rotação funcionar corretamente
 cordaModel.PrimaryPart = eixo
 
+--// --- FUNÇÃO DE COLISÃO ---
 local function aoTocar(outraParte)
-    print("ALGO TOCOU NA HASTE! O nome da peça é: " .. outraParte.Name)
-    
     local character = outraParte.Parent
     local humanoid = character:FindFirstChildOfClass("Humanoid")
-    
+
     if not humanoid or humanoid:GetState() == Enum.HumanoidStateType.Dead then
         return
     end
-    
-    print("O que tocou foi um personagem: " .. character.Name)
-    
+
     if playersEmCooldown[character] then
-        print("Personagem está em cooldown, ignorando.")
         return
     end
-    
+
     local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
     if not humanoidRootPart then
         return
     end
-    
-    print("HumanoidRootPart encontrado! APLICANDO FORÇA...")
-    
+
     playersEmCooldown[character] = true
+
+.
+    local eixoDeRotacao = Vector3.new(0, 0, 1)
+
+    --  O vetor que aponta do centro da rotação para o jogador.
+    local vetorRadial = humanoidRootPart.Position - eixo.Position
+
+    --    esteja correta mesmo se a velocidade for negativa (girando para o outro lado).
+    local direcaoTangencial = eixoDeRotacao:Cross(vetorRadial).Unit * math.sign(velocidadeDeRotacao)
     
-    local direcao = (humanoidRootPart.Position - eixo.Position).Unit
-    local forcaTotal = (direcao * forcaDoEmpurrao) + Vector3.new(0, alturaDoEmpurrao, 0)
+    --  Combina a força do "varrido" com um empurrão para cima.
+    local forcaFinal = (direcaoTangencial * forcaDoEmpurrao) + Vector3.new(0, alturaDoEmpurrao, 0)
     
-    humanoidRootPart:ApplyImpulse(forcaTotal)
-    print("FORÇA APLICADA!") -- Teste 4: Comando executado.
+    local attachment = Instance.new("Attachment")
+    attachment.Parent = humanoidRootPart
+
+    local force = Instance.new("VectorForce")
+    force.RelativeTo = Enum.ActuatorRelativeTo.World
+    force.Attachment0 = attachment
+    force.Force = forcaFinal
+    force.Parent = humanoidRootPart
+
+    Debris:AddItem(force, duracaoDoEmpurrao)
+    Debris:AddItem(attachment, duracaoDoEmpurrao)
     
+    -- Agendamos a remoção do jogador do cooldown
     task.delay(tempoDeCooldown, function()
         playersEmCooldown[character] = nil
     end)
 end
 
--- Conecta a função 'aoTocar' ao evento .Touched da parte de colisão
+-- Conecta a função ao evento .Touched da parte de colisão
 parteDeColisao.Touched:Connect(aoTocar)
 
 while true do
-    task.wait() -- Espera um frame antes de continuar
-    
-    -- Cria uma rotação no eixo Z (roll)
+    task.wait()
     local rotacao = CFrame.Angles(0, 0, math.rad(velocidadeDeRotacao))
-    
-    -- Pega a posição e orientação atual do modelo
     local atual = cordaModel:GetPivot()
-    
-    -- Aplica a nova rotação à posição atual
     cordaModel:PivotTo(atual * rotacao)
 end
